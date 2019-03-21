@@ -501,7 +501,7 @@ class ImagenetDataset(ImageDatasetV2):
   """ImageNet2012 as defined by TF Datasets."""
 
   def __init__(self, resolution, seed, filter_unlabeled=False):
-    if resolution not in [64, 128, 256, 512]:
+    if resolution not in [32, 64, 128, 256, 512]:
       raise ValueError("Unsupported resolution: {}".format(resolution))
     super(ImagenetDataset, self).__init__(
         name="imagenet_{}".format(resolution),
@@ -623,6 +623,7 @@ DATASETS = {
     "fashion-mnist": FashionMnistDataset,
     "lsun-bedroom": LsunBedroomDataset,
     "mnist": MnistDataset,
+    "imagenet_32": functools.partial(ImagenetDataset, resolution=32),
     "imagenet_64": functools.partial(ImagenetDataset, resolution=64),
     "imagenet_128": functools.partial(ImagenetDataset, resolution=128),
     "imagenet_256": functools.partial(ImagenetDataset, resolution=256),
