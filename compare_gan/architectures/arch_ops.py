@@ -706,7 +706,57 @@ def weight_norm_deconv2d(x, output_dim,
       return x
 
 
-def non_local_block(x, name, use_sn):
+def get_position_encoding_1d(length, hidden_size, min_timescale=1.0, max_timescale=1.0e4):
+  """Return positional encoding.
+  Calculates the position encoding as a mix of sine and cosine functions with
+  geometrically increasing wavelengths.
+  Defined and formulized in Attention is All You Need, section 3.5.
+  Args:
+    length: Sequence length.
+    hidden_size: Size of the
+    min_timescale: Minimum scale that will be applied at each position
+    max_timescale: Maximum scale that will be applied at each position
+  Returns:
+    Tensor with shape [length, hidden_size]
+  """
+  position = tf.to_float(tf.range(length))
+  num_timescales = hidden_size // 2
+  log_timescale_increment = (
+      math.log(float(max_timescale) / float(min_timescale)) /
+      (tf.to_float(num_timescales) - 1))
+  inv_timescales = min_timescale * tf.exp(
+      tf.to_float(tf.range(num_timescales)) * -log_timescale_increment)
+  scaled_time = tf.expand_dims(position, 1) * tf.expand_dims(inv_timescales, 0)
+  signal = tf.concat([tf.sin(scaled_time), tf.cos(scaled_time)], axis=1)
+  return signal
+
+
+
+def get_position_encoding_2d(height, width, channels):
+  """Positional encoding for 2D image
+
+  Returns:
+    Tensor with shape [height, width, channels] to be added to the signal
+  """
+
+  height_encoding = get_position_encoding_1d(height, channels//2)
+  height_encoding = tf.expand_dims(height_encoding, 1)
+  height_encoding = tf.tile(height_encoding, [1, width, 1])
+
+  width_encoding = get_position_encoding_1d(width,  channels - channels//2)
+  width_encoding = tf.expand_dims(width_encoding, 0)
+  width_encoding = tf.tile(width_encoding, [height, 1, 1])
+
+  encoding = tf.concat([height_encoding, width_encoding], axis=2)
+
+  assert encoding.shape == [height, width, channels], "Encoding does not have expected shape"
+
+  return encoding
+
+
+
+@gin.configurable(whitelist=["use_position_encoding"])
+def non_local_block(x, name, use_sn, use_position_encoding=False):
   """Self-attention (non-local) block.
 
   This method is used to exactly reproduce SAGAN and ignores Gin settings on
@@ -733,6 +783,10 @@ def non_local_block(x, name, use_sn):
     # Theta path
     theta = conv1x1(x, num_channels_attn, name="conv2d_theta", use_sn=use_sn,
                     use_bias=False)
+
+    if use_position_encoding:
+      theta += get_position_encoding_2d(theta.shape[1], theta.shape[2], theta.shape[3])
+
     theta = _spatial_flatten(theta)
 
     # Phi path
