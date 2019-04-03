@@ -41,6 +41,7 @@ setup(
         'matplotlib>=1.5.2',
         'pstar>=0.1.6',
         'scipy>=1.0.0',
+        'imageio',
     ],
     extras_require={
         'tf': ['tensorflow>=1.12'],
