@@ -154,7 +154,6 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
 
       tf.global_variables_initializer().run()
 
-
       if _update_bn_accumulators(sess, generated, num_accu_examples=204800):
         saver = tf.train.Saver()
         save_path = os.path.join(module_spec, "model-with-accu.ckpt")

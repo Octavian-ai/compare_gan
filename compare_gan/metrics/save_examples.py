@@ -49,7 +49,7 @@ class SaveExamplesTask(eval_task.EvalTask):
 
     tf.io.gfile.makedirs(FLAGS.example_dir)
     
-    for i in range(min(fake_dset.shape[0], FLAGS.example_count)):
-      imageio.imwrite(os.path.join(FLAGS.example_dir, '%03d.png' % i), fake_dset[i])
+    for i in range(min(fake_dset.images.shape[0], FLAGS.example_count)):
+      imageio.imwrite(os.path.join(FLAGS.example_dir, '%03d.png' % i), fake_dset.images[i])
 
     return {self._LABEL: FLAGS.example_count}
