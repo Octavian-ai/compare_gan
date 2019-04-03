@@ -251,9 +251,9 @@ def _run_eval(module_spec, checkpoints, task_manager, run_config,
   # the metrics folder (such as the one in metrics/kid_score.py) can be added
   # to this list if desired.
   eval_tasks = [
-      # inception_score_lib.InceptionScoreTask(),
-      # fid_score_lib.FIDScoreTask(),
-      save_examples_lib.SaveExamplesTask()
+      inception_score_lib.InceptionScoreTask(),
+      fid_score_lib.FIDScoreTask(),
+      # save_examples_lib.SaveExamplesTask()
   ]
   logging.info("eval_tasks: %s", eval_tasks)
 

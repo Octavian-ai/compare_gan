@@ -27,6 +27,8 @@ from compare_gan import datasets
 from compare_gan import eval_utils
 from compare_gan import utils
 
+from compare_gan.metrics import save_examples as save_examples_lib
+
 import gin
 import numpy as np
 from six.moves import range
@@ -169,6 +171,10 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
         fake_dset = eval_utils.EvalDataSample(
             eval_utils.sample_fake_dataset(sess, generated, num_batches))
         fake_dsets.append(fake_dset)
+
+        # Hacking this in here for speed for now
+        save_examples_lib.SaveExamplesTask().run_after_session(fake_dset, None)
+
         logging.info("Computing inception features for generated data %d/%d.",
                      i+1, num_averaging_runs)
         activations, logits = eval_utils.inception_transform_np(
