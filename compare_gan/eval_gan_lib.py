@@ -44,7 +44,7 @@ NAN_DETECTED = 31337.0
 # DM: Giant hack. I know.
 flags.DEFINE_integer(
     "force_label", None,
-    "Only generate from one label")
+    "Only generate one label. 429 is baseball in Imagenet")
 
 @gin.configurable("eval_z", blacklist=["shape", "name"])
 def z_generator(shape, distribution_fn=tf.random.uniform,
@@ -148,7 +148,7 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
                 [batch_size], maxval=dataset.num_classes, dtype=tf.int32)
           else:
             labels = tf.constant(FLAGS.force_label, shape=[batch_size], dtype=tf.int32)
-            
+
           inputs = dict(z=z, labels=labels)
         else:
           # Unconditional GAN.
