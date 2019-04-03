@@ -37,10 +37,10 @@ flags.DEFINE_string(
 
 
 flags.DEFINE_integer(
-    "example_count", 40,
+    "example_count", 100,
     "How many generated image examples to save")
 
-class SaveExamplesTask(eval_task.EvalTask):
+class SaveExamplesTask():
   """Quick and dirty image saver."""
 
   _LABEL = "save_examples"
