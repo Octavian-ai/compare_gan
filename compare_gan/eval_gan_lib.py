@@ -122,8 +122,9 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
   with tf.Graph().as_default():
     tf.set_random_seed(42)
     with tf.Session() as sess:
-      if use_tpu:
-        sess.run(tf.contrib.tpu.initialize_system())
+      # This probably screws up non continuous eval schedules
+      # if use_tpu:
+      #   sess.run(tf.contrib.tpu.initialize_system())
       def sample_from_generator():
         """Create graph for sampling images."""
         generator = hub.Module(
