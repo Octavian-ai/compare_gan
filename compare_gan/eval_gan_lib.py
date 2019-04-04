@@ -47,9 +47,14 @@ flags.DEFINE_integer(
     "force_label", None,
     "Only generate one label. 429 is baseball in Imagenet")
 
-flags.DEFINE_integer("eval_batch_size", 64, "The batch size to use during evaluation")
+flags.DEFINE_integer("eval_batch_size", 64, 
+  "The batch size to use during evaluation")
 
-flags.DEFINE_integer("num_samples", 64, "The number of samples to generate")
+flags.DEFINE_integer("num_samples", 64, 
+  "The number of samples to generate")
+
+flags.DEFINE_integer("num_accu_examples", 204800, 
+  "Number of examples to use to set the batch_norm statistics during evaluation")
 
 @gin.configurable("eval_z", blacklist=["shape", "name"])
 def z_generator(shape, distribution_fn=tf.random.uniform,
@@ -134,6 +139,7 @@ def generate_tfhub_module(module_spec, use_tpu, step):
     with tf.Session() as sess:
       if use_tpu:
         sess.run(tf.contrib.tpu.initialize_system())
+
       def sample_from_generator():
         """Create graph for sampling images."""
         generator = hub.Module(
@@ -170,7 +176,7 @@ def generate_tfhub_module(module_spec, use_tpu, step):
       save_model_accu_path = os.path.join(module_spec, "model-with-accu.ckpt")
 
       if not tf.io.gfile.exists(save_model_accu_path):
-        if _update_bn_accumulators(sess, generated, num_accu_examples=204800):
+        if _update_bn_accumulators(sess, generated, num_accu_examples=FLAGS.num_accu_examples):
           saver = tf.train.Saver()
           checkpoint_path = saver.save(
               sess,
