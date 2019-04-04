@@ -131,6 +131,32 @@ class ArchOpsTest(tf.test.TestCase):
         self.assertAllClose(av, [10.0, 12.0])
         self.assertAllClose([ac], [2.0])
 
+  def testPositionEncoding2d(self):
+    with tf.Graph().as_default():
+      with self.session() as sess:
+
+        height = 32
+        width = 32
+        channels = 16
+
+        posenc = sess.run(arch_ops.get_position_encoding_2d(height, width, channels))
+
+        self.assertEqual(posenc.shape, (height, width, channels))
+
+        def between(a,b):
+          return np.dot(posenc[a[0],a[1]], posenc[b[0],b[1]])
+
+        self.assertNotAllClose(posenc[3,5], posenc[3,6])
+        self.assertNotAllClose(posenc[3,5], posenc[4,6])
+        self.assertNotAllClose(posenc[3,5], posenc[4,5])
+
+        self.assertNotEqual(between((0,0), (1,0)),between((0,0), (2,0)))
+        self.assertNotEqual(between((0,0), (1,0)),between((0,0), (1,1)))
+        self.assertNotEqual(between((1,0), (2,0)),between((1,0), (3,0)))
+
+
+
+
 
 if __name__ == "__main__":
   tf.test.main()
