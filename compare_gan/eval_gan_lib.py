@@ -48,7 +48,7 @@ flags.DEFINE_integer(
     "Only generate one label. 429 is baseball in Imagenet")
 
 
-flags.DEFINE_integer("eval_batch_size", 64)
+flags.DEFINE_integer("eval_batch_size", 64, "The batch size to use during evaluation")
 
 @gin.configurable("eval_z", blacklist=["shape", "name"])
 def z_generator(shape, distribution_fn=tf.random.uniform,
