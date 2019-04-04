@@ -47,7 +47,7 @@ class SaveExamplesTask():
 
   def run_after_session(self, fake_dset, real_dest, step):
 
-    tf.io.gfile.makedirs(FLAGS.example_dir)
+    tf.io.gfile.makedirs(os.path.join(FLAGS.example_dir, step))
     
     for i in range(min(fake_dset.images.shape[0], FLAGS.example_count)):
       filename = os.path.join(FLAGS.example_dir, step, '%03d.png' % i)
