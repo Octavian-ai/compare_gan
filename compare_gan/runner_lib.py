@@ -267,10 +267,14 @@ def _run_eval(module_spec, checkpoints, task_manager, run_config,
     if not tf.gfile.Exists(export_path):
       module_spec.export(export_path, checkpoint_path=checkpoint_path)
     default_value = -1.0
+    
     try:
-      result_dict = eval_gan_lib.evaluate_tfhub_module(
-          export_path, eval_tasks, use_tpu=use_tpu,
-          num_averaging_runs=num_averaging_runs, step=step)
+      eval_gan_lib.generate_tfhub_module(export_path, use_tpu=use_tpu, step=step)
+      result_dict = {}
+
+      # result_dict = eval_gan_lib.evaluate_tfhub_module(
+      #     export_path, eval_tasks, use_tpu=use_tpu,
+      #     num_averaging_runs=num_averaging_runs, step=step)
     except ValueError as nan_found_error:
       result_dict = {}
       logging.exception(nan_found_error)

@@ -47,8 +47,9 @@ flags.DEFINE_integer(
     "force_label", None,
     "Only generate one label. 429 is baseball in Imagenet")
 
-
 flags.DEFINE_integer("eval_batch_size", 64, "The batch size to use during evaluation")
+
+flags.DEFINE_integer("num_samples", 64, "The number of samples to generate")
 
 @gin.configurable("eval_z", blacklist=["shape", "name"])
 def z_generator(shape, distribution_fn=tf.random.uniform,
@@ -100,6 +101,89 @@ def _update_bn_accumulators(sess, generated, num_accu_examples):
   sess.run([tf.assign(v, 0) for v in update_accu_switches])
   logging.info("Done updating BN accumulators.")
   return True
+
+
+
+def generate_tfhub_module(module_spec, use_tpu, step):
+  """Generate from model at given checkpoint_path.
+
+  Args:
+    module_spec: string, path to a TF hub module.
+    use_tpu: Whether to use TPUs.
+    step: Name of the step being evaluated
+
+  Returns:
+    Nothing
+
+  Raises:
+    NanFoundError: If generator output has any NaNs.
+  """
+  # Make sure that the same latent variables are used for each evaluation.
+  np.random.seed(42)
+  dataset = datasets.get_dataset()
+  num_test_examples = FLAGS.num_samples
+
+  batch_size = FLAGS.eval_batch_size
+  num_batches = int(np.ceil(num_test_examples / batch_size))
+
+  # Load and update the generator.
+  result_dict = {}
+  fake_dsets = []
+  with tf.Graph().as_default():
+    tf.set_random_seed(42)
+    with tf.Session() as sess:
+      if use_tpu:
+        sess.run(tf.contrib.tpu.initialize_system())
+      def sample_from_generator():
+        """Create graph for sampling images."""
+        generator = hub.Module(
+            module_spec,
+            name="gen_module",
+            tags={"gen", "bs{}".format(batch_size)})
+        logging.info("Generator inputs: %s", generator.get_input_info_dict())
+        z_dim = generator.get_input_info_dict()["z"].get_shape()[1].value
+        z = z_generator(shape=[batch_size, z_dim])
+        if "labels" in generator.get_input_info_dict():
+          # Conditional GAN.
+          assert dataset.num_classes
+
+          if FLAGS.force_label is None:
+            labels = tf.random.uniform(
+                [batch_size], maxval=dataset.num_classes, dtype=tf.int32)
+          else:
+            labels = tf.constant(FLAGS.force_label, shape=[batch_size], dtype=tf.int32)
+
+          inputs = dict(z=z, labels=labels)
+        else:
+          # Unconditional GAN.
+          assert "labels" not in generator.get_input_info_dict()
+          inputs = dict(z=z)
+        return generator(inputs=inputs, as_dict=True)["generated"]
+      
+      if use_tpu:
+        generated = tf.contrib.tpu.rewrite(sample_from_generator)
+      else:
+        generated = sample_from_generator()
+
+      tf.global_variables_initializer().run()
+
+      save_model_accu_path = os.path.join(module_spec, "model-with-accu.ckpt")
+
+      if not tf.io.gfile.exists(save_model_accu_path):
+        if _update_bn_accumulators(sess, generated, num_accu_examples=204800):
+          saver = tf.train.Saver()
+          checkpoint_path = saver.save(
+              sess,
+              save_path=save_model_accu_path)
+          logging.info("Exported generator with accumulated batch stats to "
+                       "%s.", checkpoint_path)
+
+      logging.info("Generating fake data set")
+      fake_dset = eval_utils.EvalDataSample(
+          eval_utils.sample_fake_dataset(sess, generated, num_batches))
+
+      save_examples_lib.SaveExamplesTask().run_after_session(fake_dset, None, step)
+
 
 
 def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
@@ -181,7 +265,7 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
       if not eval_tasks:
         logging.error("Task list is empty, returning.")
         return
-        
+
       for i in range(num_averaging_runs):
         logging.info("Generating fake data set %d/%d.", i+1, num_averaging_runs)
         fake_dset = eval_utils.EvalDataSample(
