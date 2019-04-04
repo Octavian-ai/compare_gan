@@ -168,17 +168,20 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
 
       tf.global_variables_initializer().run()
 
-      if _update_bn_accumulators(sess, generated, num_accu_examples=204800):
-        saver = tf.train.Saver()
-        save_path = os.path.join(module_spec, "model-with-accu.ckpt")
-        checkpoint_path = saver.save(
-            sess,
-            save_path=save_path)
-        logging.info("Exported generator with accumulated batch stats to "
-                     "%s.", checkpoint_path)
+      save_model_accu_path = os.path.join(module_spec, "model-with-accu.ckpt")
+
+      if not tf.io.gfile.exists(save_model_accu_path):
+        if _update_bn_accumulators(sess, generated, num_accu_examples=204800):
+          saver = tf.train.Saver()
+          checkpoint_path = saver.save(
+              sess,
+              save_path=save_model_accu_path)
+          logging.info("Exported generator with accumulated batch stats to "
+                       "%s.", checkpoint_path)
       if not eval_tasks:
         logging.error("Task list is empty, returning.")
         return
+        
       for i in range(num_averaging_runs):
         logging.info("Generating fake data set %d/%d.", i+1, num_averaging_runs)
         fake_dset = eval_utils.EvalDataSample(
