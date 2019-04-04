@@ -45,7 +45,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("model_dir", None, "Where to store files.")
 flags.DEFINE_string(
     "schedule", "train",
-    "Schedule to run. Options: train, continuous_eval.")
+    "Schedule to run. Options: train, continuous_eval, eval_after_train, eval_last")
 flags.DEFINE_multi_string(
     "gin_config", [],
     "List of paths to the config files.")

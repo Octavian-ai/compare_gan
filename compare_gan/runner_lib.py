@@ -258,6 +258,8 @@ def _run_eval(module_spec, checkpoints, task_manager, run_config,
   logging.info("eval_tasks: %s", eval_tasks)
 
   for checkpoint_path in checkpoints:
+    logging.info("Evaluating checkpoint %s", checkpoint_path)
+
     step = os.path.basename(checkpoint_path).split("-")[-1]
     if step == 0:
       continue
@@ -291,6 +293,7 @@ def run_with_schedule(schedule, run_config, task_manager, options, use_tpu,
   - continuous_eval: Waiting for new checkpoints and evaluate them as they
       become available. This is meant to run in parallel with a job running
       the training schedule but can also run after it.
+  - eval_last: Evaluate just last checkpoint
 
   Args:
     schedule: Schedule to run. One of: train, continuous_eval, train_and_eval.
@@ -314,7 +317,7 @@ def run_with_schedule(schedule, run_config, task_manager, options, use_tpu,
                              parameters=options,
                              model_dir=run_config.model_dir)
 
-  if schedule not in {"train", "eval_after_train", "continuous_eval"}:
+  if schedule not in {"train", "eval_after_train", "continuous_eval", "eval_last"}:
     raise ValueError("Schedule {} not supported.".format(schedule))
   if schedule in {"train", "eval_after_train"}:
     train_hooks = [
@@ -343,10 +346,15 @@ def run_with_schedule(schedule, run_config, task_manager, options, use_tpu,
     # Continuous eval with up to 24 hours between checkpoints.
     checkpoints = task_manager.unevaluated_checkpoints(
         timeout=24 * 3600, eval_every_steps=eval_every_steps)
+  
   if schedule == "eval_after_train":
     checkpoints = task_manager.unevaluated_checkpoints(
         eval_every_steps=eval_every_steps)
-  if schedule in {"continuous_eval", "eval_after_train"}:
+
+  if schedule == "eval_last":
+    checkpoints = task_manager.unevaluated_checkpoints()[-1::1]
+
+  if schedule in {"continuous_eval", "eval_after_train", "eval_last"}:
     _run_eval(
         gan.as_module_spec(),
         checkpoints=checkpoints,
