@@ -352,7 +352,7 @@ def run_with_schedule(schedule, run_config, task_manager, options, use_tpu,
         eval_every_steps=eval_every_steps)
 
   if schedule == "eval_last":
-    checkpoints = task_manager.unevaluated_checkpoints()[-1::1]
+    checkpoints = list(task_manager.unevaluated_checkpoints())[-1::1]
 
   if schedule in {"continuous_eval", "eval_after_train", "eval_last"}:
     _run_eval(
