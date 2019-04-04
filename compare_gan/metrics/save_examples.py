@@ -45,11 +45,13 @@ class SaveExamplesTask():
 
   _LABEL = "save_examples"
 
-  def run_after_session(self, fake_dset, real_dest):
+  def run_after_session(self, fake_dset, real_dest, step):
 
     tf.io.gfile.makedirs(FLAGS.example_dir)
     
     for i in range(min(fake_dset.images.shape[0], FLAGS.example_count)):
-      imageio.imwrite(os.path.join(FLAGS.example_dir, '%03d.png' % i), fake_dset.images[i])
+      filename = os.path.join(FLAGS.example_dir, step, '%03d.png' % i)
+      with tf.io.gfile.GFile(filename, 'w') as file:
+        imageio.imwrite(file, fake_dset.images[i], format='png')
 
     return {self._LABEL: FLAGS.example_count}

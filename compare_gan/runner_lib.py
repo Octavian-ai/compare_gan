@@ -252,7 +252,7 @@ def _run_eval(module_spec, checkpoints, task_manager, run_config,
   # to this list if desired.
   eval_tasks = [
       inception_score_lib.InceptionScoreTask(),
-      fid_score_lib.FIDScoreTask(),
+      # fid_score_lib.FIDScoreTask(),
       # save_examples_lib.SaveExamplesTask()
   ]
   logging.info("eval_tasks: %s", eval_tasks)
@@ -270,7 +270,7 @@ def _run_eval(module_spec, checkpoints, task_manager, run_config,
     try:
       result_dict = eval_gan_lib.evaluate_tfhub_module(
           export_path, eval_tasks, use_tpu=use_tpu,
-          num_averaging_runs=num_averaging_runs)
+          num_averaging_runs=num_averaging_runs, step=step)
     except ValueError as nan_found_error:
       result_dict = {}
       logging.exception(nan_found_error)

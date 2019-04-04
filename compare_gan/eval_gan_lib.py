@@ -99,7 +99,7 @@ def _update_bn_accumulators(sess, generated, num_accu_examples):
 
 
 def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
-                          num_averaging_runs):
+                          num_averaging_runs, step):
   """Evaluate model at given checkpoint_path.
 
   Args:
@@ -107,6 +107,7 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
     eval_tasks: List of objects that inherit from EvalTask.
     use_tpu: Whether to use TPUs.
     num_averaging_runs: Determines how many times each metric is computed.
+    step: Name of the step being evaluated
 
   Returns:
     Dict[Text, float] with all the computed results.
@@ -181,7 +182,7 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
         fake_dsets.append(fake_dset)
 
         # Hacking this in here for speed for now
-        save_examples_lib.SaveExamplesTask().run_after_session(fake_dset, None)
+        save_examples_lib.SaveExamplesTask().run_after_session(fake_dset, None, step)
 
         logging.info("Computing inception features for generated data %d/%d.",
                      i+1, num_averaging_runs)
