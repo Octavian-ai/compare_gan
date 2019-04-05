@@ -30,6 +30,7 @@ import tensorflow as tf
 import tensorflow_gan as tfgan
 import imageio
 import math
+import numpy as np
 
 flags.DEFINE_string(
     "example_dir", "./examples",
