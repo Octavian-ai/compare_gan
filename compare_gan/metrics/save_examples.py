@@ -84,7 +84,7 @@ class SaveExamplesTask():
     grid_size = (int(math.sqrt(n_images))+1, int(math.sqrt(n_images)))
     grid = self.merge(fake_dset.images, grid_size)
 
-    filename = os.path.join(FLAGS.example_dir, step, 'grid.png')
+    filename = os.path.join(FLAGS.example_dir, step + '_grid.png')
     with tf.io.gfile.GFile(filename, 'w') as file:
       imageio.imwrite(file, grid, format='png')
 
