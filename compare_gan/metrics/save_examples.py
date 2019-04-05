@@ -29,7 +29,7 @@ from compare_gan.metrics import eval_task
 import tensorflow as tf
 import tensorflow_gan as tfgan
 import imageio
-
+import math
 
 flags.DEFINE_string(
     "example_dir", "./examples",
@@ -80,7 +80,7 @@ class SaveExamplesTask():
       with tf.io.gfile.GFile(filename, 'w') as file:
         imageio.imwrite(file, fake_dset.images[i], format='png')
 
-    grid_size = (int(Math.sqrt(n_images))+1, int(Math.sqrt(n_images)))
+    grid_size = (int(math.sqrt(n_images))+1, int(math.sqrt(n_images)))
     grid = self.merge(fake_dset.images, grid_size)
 
     filename = os.path.join(FLAGS.example_dir, step, 'grid.png')
@@ -90,4 +90,4 @@ class SaveExamplesTask():
     return {self._LABEL: FLAGS.example_count}
 
 
-    
+
