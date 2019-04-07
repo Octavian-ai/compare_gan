@@ -168,7 +168,7 @@ def generate_tfhub_module(module_spec, use_tpu, step):
             inputs = dict(z=z)
           return generator(inputs=inputs, as_dict=True)["generated"]
         return sample_from_generator
-        
+
       if use_tpu:
         generated = tf.contrib.tpu.rewrite(create_generator())
       else:
@@ -198,6 +198,8 @@ def generate_tfhub_module(module_spec, use_tpu, step):
           generated = tf.contrib.tpu.rewrite(create_generator(FLAGS.force_label))
         else:
           generated = create_generator(FLAGS.force_label)()
+
+        tf.global_variables_initializer().run()
 
         logging.info("Generating fake data set with forced label")
         fake_dset = eval_utils.EvalDataSample(
