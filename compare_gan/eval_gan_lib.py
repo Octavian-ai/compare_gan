@@ -140,36 +140,38 @@ def generate_tfhub_module(module_spec, use_tpu, step):
       if use_tpu:
         sess.run(tf.contrib.tpu.initialize_system())
 
-      def sample_from_generator():
-        """Create graph for sampling images."""
-        generator = hub.Module(
-            module_spec,
-            name="gen_module",
-            tags={"gen", "bs{}".format(batch_size)})
-        logging.info("Generator inputs: %s", generator.get_input_info_dict())
-        z_dim = generator.get_input_info_dict()["z"].get_shape()[1].value
-        z = z_generator(shape=[batch_size, z_dim])
-        if "labels" in generator.get_input_info_dict():
-          # Conditional GAN.
-          assert dataset.num_classes
 
-          if FLAGS.force_label is None:
-            labels = tf.random.uniform(
-                [batch_size], maxval=dataset.num_classes, dtype=tf.int32)
+      def create_generator(force_label=None):
+        def sample_from_generator():
+          """Create graph for sampling images."""
+          generator = hub.Module(
+              module_spec,
+              name="gen_module",
+              tags={"gen", "bs{}".format(batch_size)})
+          logging.info("Generator inputs: %s", generator.get_input_info_dict())
+          z_dim = generator.get_input_info_dict()["z"].get_shape()[1].value
+          z = z_generator(shape=[batch_size, z_dim])
+          if "labels" in generator.get_input_info_dict():
+            # Conditional GAN.
+            assert dataset.num_classes
+
+            if force_label is None:
+              labels = tf.random.uniform(
+                  [batch_size], maxval=dataset.num_classes, dtype=tf.int32)
+            else:
+              labels = tf.constant(force_label, shape=[batch_size], dtype=tf.int32)
+
+            inputs = dict(z=z, labels=labels)
           else:
-            labels = tf.constant(FLAGS.force_label, shape=[batch_size], dtype=tf.int32)
-
-          inputs = dict(z=z, labels=labels)
-        else:
-          # Unconditional GAN.
-          assert "labels" not in generator.get_input_info_dict()
-          inputs = dict(z=z)
-        return generator(inputs=inputs, as_dict=True)["generated"]
+            # Unconditional GAN.
+            assert "labels" not in generator.get_input_info_dict()
+            inputs = dict(z=z)
+          return generator(inputs=inputs, as_dict=True)["generated"]
       
       if use_tpu:
-        generated = tf.contrib.tpu.rewrite(sample_from_generator)
+        generated = tf.contrib.tpu.rewrite(create_generator())
       else:
-        generated = sample_from_generator()
+        generated = create_generator()()
 
       tf.global_variables_initializer().run()
 
@@ -189,6 +191,18 @@ def generate_tfhub_module(module_spec, use_tpu, step):
           eval_utils.sample_fake_dataset(sess, generated, num_batches))
 
       save_examples_lib.SaveExamplesTask().run_after_session(fake_dset, None, step)
+
+      if FLAGS.force_label is not None:
+        if use_tpu:
+          generated = tf.contrib.tpu.rewrite(create_generator(FLAGS.force_label))
+        else:
+          generated = create_generator(FLAGS.force_label)()
+
+        logging.info("Generating fake data set with forced label")
+        fake_dset = eval_utils.EvalDataSample(
+            eval_utils.sample_fake_dataset(sess, generated, num_batches))
+
+        save_examples_lib.SaveExamplesTask().run_after_session(fake_dset, None, step, force_label=FLAGS.force_label)
 
 
 

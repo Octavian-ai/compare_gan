@@ -70,21 +70,26 @@ class SaveExamplesTask():
         raise ValueError('in merge(images,size) images parameter ''must have dimensions: HxW or HxWx3 or HxWx4')
 
 
-  def run_after_session(self, fake_dset, real_dest, step):
+  def run_after_session(self, fake_dset, real_dest, step, force_label=None):
 
     tf.io.gfile.makedirs(os.path.join(FLAGS.example_dir, step))
     
     n_images = fake_dset.images.shape[0]
+
+    if force_label is not None: 
+      label_str = "force_label_"+force_label
+    else:
+      label_str = "all_labels"
     
     for i in range(min(n_images, FLAGS.example_count)):
-      filename = os.path.join(FLAGS.example_dir, step, '%03d.png' % i)
+      filename = os.path.join(FLAGS.example_dir, step,  label_str + '_%03d.png' % i)
       with tf.io.gfile.GFile(filename, 'w') as file:
         imageio.imwrite(file, fake_dset.images[i], format='png')
 
     grid_size = (int(math.sqrt(n_images))+1, int(math.sqrt(n_images)))
     grid = self.merge(fake_dset.images, grid_size)
 
-    filename = os.path.join(FLAGS.example_dir, step + '_grid.png')
+    filename = os.path.join(FLAGS.example_dir, step + '_' + label_str + '_grid.png')
     with tf.io.gfile.GFile(filename, 'w') as file:
       imageio.imwrite(file, grid, format='png')
 
