@@ -167,7 +167,8 @@ def generate_tfhub_module(module_spec, use_tpu, step):
             assert "labels" not in generator.get_input_info_dict()
             inputs = dict(z=z)
           return generator(inputs=inputs, as_dict=True)["generated"]
-      
+        return sample_from_generator
+        
       if use_tpu:
         generated = tf.contrib.tpu.rewrite(create_generator())
       else:
