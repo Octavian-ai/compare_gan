@@ -77,7 +77,7 @@ class SaveExamplesTask():
     n_images = fake_dset.images.shape[0]
 
     if force_label is not None: 
-      label_str = "force_label_"+force_label
+      label_str = "force_label_" + str(force_label)
     else:
       label_str = "all_labels"
     
