@@ -72,7 +72,7 @@ class SaveExamplesTask():
 
   def run_after_session(self, fake_dset, real_dest, step, force_label=None):
 
-    # tf.io.gfile.makedirs(os.path.join(FLAGS.example_dir, step))
+    tf.io.gfile.makedirs(FLAGS.example_dir)
     
     n_images = fake_dset.images.shape[0]
 
