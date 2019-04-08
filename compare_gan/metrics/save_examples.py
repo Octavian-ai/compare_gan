@@ -72,7 +72,7 @@ class SaveExamplesTask():
 
   def run_after_session(self, fake_dset, real_dest, step, force_label=None):
 
-    tf.io.gfile.makedirs(os.path.join(FLAGS.example_dir, step))
+    # tf.io.gfile.makedirs(os.path.join(FLAGS.example_dir, step))
     
     n_images = fake_dset.images.shape[0]
 
@@ -81,10 +81,10 @@ class SaveExamplesTask():
     else:
       label_str = "all_labels"
     
-    for i in range(min(n_images, FLAGS.example_count)):
-      filename = os.path.join(FLAGS.example_dir, step,  label_str + '_%03d.png' % i)
-      with tf.io.gfile.GFile(filename, 'w') as file:
-        imageio.imwrite(file, fake_dset.images[i], format='png')
+    # for i in range(min(n_images, FLAGS.example_count)):
+    #   filename = os.path.join(FLAGS.example_dir, step,  label_str + '_%03d.png' % i)
+    #   with tf.io.gfile.GFile(filename, 'w') as file:
+    #     imageio.imwrite(file, fake_dset.images[i], format='png')
 
     grid_size = (int(math.sqrt(n_images))+1, int(math.sqrt(n_images)))
     grid = self.merge(fake_dset.images, grid_size)

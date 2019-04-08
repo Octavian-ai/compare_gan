@@ -140,7 +140,6 @@ def generate_tfhub_module(module_spec, use_tpu, step):
       if use_tpu:
         sess.run(tf.contrib.tpu.initialize_system())
 
-
       def create_generator(force_label=None):
         def sample_from_generator():
           """Create graph for sampling images."""
@@ -178,12 +177,11 @@ def generate_tfhub_module(module_spec, use_tpu, step):
 
       save_model_accu_path = os.path.join(module_spec, "model-with-accu.ckpt")
 
+      saver = tf.train.Saver()
+
       if not tf.io.gfile.exists(save_model_accu_path):
         if _update_bn_accumulators(sess, generated, num_accu_examples=FLAGS.num_accu_examples):
-          saver = tf.train.Saver()
-          checkpoint_path = saver.save(
-              sess,
-              save_path=save_model_accu_path)
+          checkpoint_path = saver.save(sess, save_path=save_model_accu_path)
           logging.info("Exported generator with accumulated batch stats to "
                        "%s.", checkpoint_path)
 
@@ -200,6 +198,7 @@ def generate_tfhub_module(module_spec, use_tpu, step):
           generated = create_generator(FLAGS.force_label)()
 
         tf.global_variables_initializer().run()
+        saver.restore(sess, save_model_accu_path)
 
         logging.info("Generating fake data set with forced label")
         fake_dset = eval_utils.EvalDataSample(
